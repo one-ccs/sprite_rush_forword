@@ -1,0 +1,7 @@
+__pycache__
+static
+templates
+
+test.py
+*.db
+*.ico
