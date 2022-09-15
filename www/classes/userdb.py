@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from tabnanny import check
 from werkzeug.security import generate_password_hash, check_password_hash
 from os import path
 import sqlite3
@@ -19,37 +18,26 @@ class UserDB:
             raise ValueError(f'无效的数据库文件路径({db_path}).')
         self.db_path = db_path
 
-    def query_by_user(self, user):
-        pass
-
-    def query_all(self):
+    def query_all_and_user(self):
         pass
 
     def regist(self, user):
         """ 用户注册 """
         if not isinstance(user, User):
             raise TypeError(f'类型错误: 期待 {type(User)} 类型, 却传入{type(user)} 类型.')
-        result = None
-        # result = {'state': True, 'msg': ''}
-
-        pwd = generate_password_hash(user.pwd)[21:]
+        result = False
 
         connection = sqlite3.connect(self.db_path)
         rowcount = 0
         try:
+            pwd = generate_password_hash(user.pwd)[21:]
             t = (user.user, pwd, user.score)
             with connection:
                 rowcount = connection.execute('INSERT INTO user(user, pwd, score) VALUES(?, ?, ?)', t).rowcount
-        except sqlite3.IntegrityError as e:
-            result = None
-            # result['state'] = False
-            # result['msg'] = '用户名已存在，请修改后重试'
+        except sqlite3.IntegrityError:
+            pass
         finally:
-            if(not rowcount or rowcount == 0):
-                result = None
-                # result['state'] = False
-                # result['msg'] = '用户名已存在，请修改后重试'
-            else:
+            if(rowcount and rowcount > 0):
                 result = True
             connection.close()
 
@@ -71,7 +59,7 @@ class UserDB:
             if row:
                 # 查询成功
                 if not check_password_hash(f'pbkdf2:sha256:260000${row[1]}', user.pwd):
-                    user.pwd = 'None'
+                    user.errmsg = '密码错误'
                     result = user
                 else:
                     result = User(user.user, row[1], row[2])
@@ -89,31 +77,36 @@ class UserDB:
 
         return result
 
-    def modify(self, user):
-        """ 用户修改 """
+    def modify(self, user, encryption=True):
+        """ 用户修改, 默认加密密码 """
         if not isinstance(user, User):
             raise TypeError(f'类型错误: 期待 {type(User)} 类型, 却传入{type(user)} 类型.')
-        result = {'state': True, 'msg': ''}
+        result = user
 
         # 加密密码
-        pwd = generate_password_hash(user.pwd)[21:]
+        if encryption:
+            pwd = generate_password_hash(user.pwd)[21:]
+        else:
+            pwd = user.pwd
         # 连接数据库，没有则自动创建
         connection = sqlite3.connect(self.db_path)
+        rowcount, row, err_exist = 0, None, False
         try:
             t = (user.user, pwd, user.id)
             # 执行 SQL 语句, 使用 with 语句块将自动 commit 或 rollback
             with connection:
                 rowcount = connection.execute('UPDATE user SET user=?,pwd=? WHERE id=?', t).rowcount
-        except sqlite3.IntegrityError as e:
-            result['state'] = False
-            result['msg'] = '用户名已存在，请修改后重试'
+            t = (user.user, )
+            row = connection.execute('SELECT id,pwd,score from user where user=?', t).fetchone()
+        except sqlite3.IntegrityError:
+            err_exist = True
+            user.errmsg = '用户名已存在, 请勿重复'
         finally:
-            if rowcount == 0:
-                result['state'] = False
-                result['msg'] = '未找到该用户'
+            if rowcount == 0 and not err_exist and not row:
+                user.errmsg = '未找到该用户'
             else:
-                result['state'] = True
-                result['msg'] = '修改成功'
+                # 修改成功
+                user.id, user.pwd, user.score = row[0], row[1], row[2]
             # 必须手动关闭数据库连接
             connection.close()
 

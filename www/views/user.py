@@ -17,12 +17,12 @@ def _session():
         # 查询用户并匹配密码
         result = userdb.login(User(user, pwd))
         if result:
-            if result.pwd == 'None':
+            if hasattr(result, 'errmsg'):
                 # 密码错误
                 res = make_response({'state': 'fail', 'msg': '密码错误'}, 403)
             else:
                 # 校验成功
-                session[user] = (result.id, result.pwd)
+                session[user] = {'id': result.id, 'pwd': result.pwd}
                 session.permanent = True
                 res = make_response({'state': 'ok', 'msg': '登录成功'}, 200)
                 res.set_cookie('user', result.user)
@@ -49,43 +49,62 @@ def regist():
     # 获取表单数据
     user = request.form.get('user')
     pwd = request.form.get('pwd')
-
     # 插入数据库
     result = userdb.regist(User(user, pwd))
-    # if result['state']:
     if result:
         res = make_response({'state': 'ok', 'msg': '注册成功'}, 200)
-        # return jsonify({'state': 'ok', 'msg': '注册成功'})
     else:
         res = make_response({'state': 'fail', 'msg': '注册失败, 用户名已存在, 请修改后重试'}, 403)
-        # res = make_response({'state': 'fail', 'msg': f'注册失败, {result["msg"]}'}, 403)
-        # return res
     
     return res
 
 @user_blue.route('/modify', methods=['POST'])
 def modify():
-    # 获取表单数据
-    user = request.form.get('user')
-    pwd = request.form.get('pwd')
-    cooike_user = request.cookies.get(user)
-
+    res = None
     # 判断登陆状态
-    if not cooike_user:
-        # 未登录
-        return jsonify({'state': 'fail', 'msg': '用户未登录'})
+    cooike_user = request.cookies.get('user')
+    if not cooike_user or cooike_user not in session:
+        return make_response({'state': 'fail', 'msg': '未登录'}, 401)
 
-    # 修改数据库
-    result = userdb.modify(User(user, pwd))
-    if result['state']:
-        return jsonify({'state': 'ok', 'msg': '修改成功'})
+    # 获取表单数据
+    form_user = request.form.get('user')
+    form_pwd = request.form.get('pwd')
+    # 组织数据
+    user, encryption = None, True
+    if form_user and form_pwd:
+        user = User(form_user, form_pwd)
+    elif form_user:
+        encryption = False
+        user = User(form_user, session.get(cooike_user)['pwd'])
+    elif form_pwd:
+        user = User(cooike_user, form_pwd)
     else:
-        return jsonify({'state': 'fail', 'msg': f'修改失败, {result["msg"]}'})
+        return make_response({'state': 'fail', 'msg': '用户名和密码不能同时为空'}, 403)
+    user.id = session.get(cooike_user)['id']
+    # 提交数据库
+    result = userdb.modify(user, encryption)
+    if hasattr(result, 'errmsg'):
+        res = make_response({'state': 'fail', 'msg': result.errmsg}, 403)
+    else:
+        # 修改成功
+        res = make_response({'state': 'ok', 'msg': '修改成功'}, 200)
+        if form_user:
+            # 修改了用户名则重设会话
+            session[form_user] = {'id': result.id, 'pwd': result.pwd}
+            session.pop(cooike_user)
+            res.set_cookie('user', result.user)
+        else:
+            session[cooike_user] = {'id': result.id, 'pwd': result.pwd}
+        session.permanent = True
+
+    return res
 
 @user_blue.route('/score', methods=['GET', 'POST'])
 def score():
     res = None
-    user = request.cookies.get('user')
+    cooike_user = request.cookies.get('user')
+    if not cooike_user or cooike_user not in session:
+        return make_response({'state': 'fail', 'msg': '请登录后操作'}, 401)
 
     if request.method == 'GET':
         # 查询
@@ -94,19 +113,15 @@ def score():
     if request.method == 'POST':
         # 修改
         score = request.form.get('score')
-        if not user or user not in session:
-            #未登录
-            res = make_response({'state': 'fail', 'msg': '请登录后操作'}, 403)
+        _user = User(cooike_user, 'None', score)
+        _user.id = session.get(cooike_user)['id']
+        result = userdb.modify_score(_user)
+        if result['state']:
+            # 修改成功
+            result['state'] = 'ok'
+            res = make_response(result, 200)
         else:
-            _user = User(user, 'None', score)
-            _user.id = session.get(user)[0]
-            result = userdb.modify_score(_user)
-            if result['state']:
-                # 修改成功
-                result['state'] = 'ok'
-                res = make_response(result, 200)
-            else:
-                result['state'] = 'fail'
-                res = make_response(result, 403)
+            result['state'] = 'fail'
+            res = make_response(result, 403)
 
     return res
