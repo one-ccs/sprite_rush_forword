@@ -2,10 +2,13 @@
 # -*- coding: utf-8 -*-
 from flask import Flask, render_template
 from datetime import timedelta
+from classes.userdb import UserDB
+
 app = Flask(__name__)
+userdb = UserDB('./db/user.db')
 
 app.config['SECRET_KEY'] = 'hard to gusss'
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(seconds=1800)
+# app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(seconds=1800)
 
 
 @app.route('/')
@@ -21,4 +24,4 @@ app.register_blueprint(user_blue)
 
 
 if __name__ == '__main__':
-    app.run(port=9527, debug=True)
+    app.run(host='0.0.0.0', port=9527, debug=True)
