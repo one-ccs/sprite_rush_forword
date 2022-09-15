@@ -29,23 +29,28 @@ class UserDB:
         """ 用户注册 """
         if not isinstance(user, User):
             raise TypeError(f'类型错误: 期待 {type(User)} 类型, 却传入{type(user)} 类型.')
-        result = {'state': True, 'msg': ''}
+        result = None
+        # result = {'state': True, 'msg': ''}
 
         pwd = generate_password_hash(user.pwd)[21:]
 
         connection = sqlite3.connect(self.db_path)
-        rowcount = None
+        rowcount = 0
         try:
             t = (user.user, pwd, user.score)
             with connection:
                 rowcount = connection.execute('INSERT INTO user(user, pwd, score) VALUES(?, ?, ?)', t).rowcount
         except sqlite3.IntegrityError as e:
-            result['state'] = False
-            result['msg'] = '用户名已存在，请修改后重试'
+            result = None
+            # result['state'] = False
+            # result['msg'] = '用户名已存在，请修改后重试'
         finally:
             if(not rowcount or rowcount == 0):
-                result['state'] = False
-                result['msg'] = '用户名已存在，请修改后重试'
+                result = None
+                # result['state'] = False
+                # result['msg'] = '用户名已存在，请修改后重试'
+            else:
+                result = True
             connection.close()
 
         return result
@@ -54,37 +59,23 @@ class UserDB:
         """ 校验密码, 并返回 User """
         if not isinstance(user, User):
             raise TypeError(f'类型错误: 期待 {type(User)} 类型, 却传入{type(user)} 类型.')
-        result = {'state': True, 'msg': ''}
+        result = None
 
         connection = sqlite3.connect(self.db_path)
+        # 查询密码
         row = ()
         try:
-            # 查询密码
             t = (user.user, )
             row = connection.execute('SELECT id,pwd,score from user where user=?', t).fetchone()
-        except sqlite3.IntegrityError as e:
-            result = None
-            # result['state'] = False
-            # result['msg'] = f'未查找到用户: "{user.user}"'
         finally:
-            if not row:
-                result = None
-                # result['state'] = False
-                # result['msg'] = f'未查找到用户: "{user.user}"'
-            else:
+            if row:
                 # 查询成功
                 if not check_password_hash(f'pbkdf2:sha256:260000${row[1]}', user.pwd):
                     user.pwd = 'None'
                     result = user
-                    # result['state'] = False
-                    # result['msg'] = '密码校验失败'
                 else:
                     result = User(user.user, row[1], row[2])
                     result.id = row[0]
-                    # result['id'] = row[0]
-                    # result['pwd'] = row[1]
-                    # result['state'] = True
-                    # result['msg'] = '密码校验成功'
             connection.close()
 
         return result

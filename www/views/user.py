@@ -16,26 +16,19 @@ def _session():
         pwd = request.form.get('pwd')
         # 查询用户并匹配密码
         result = userdb.login(User(user, pwd))
-        # if result['state']:
         if result:
             if result.pwd == 'None':
                 # 密码错误
                 res = make_response({'state': 'fail', 'msg': '密码错误'}, 403)
             else:
                 # 校验成功
-                # result['state'] = 'ok'
                 session[user] = (result.id, result.pwd)
-                # session[user] = (result['id'], result['pwd'])
                 session.permanent = True
                 res = make_response({'state': 'ok', 'msg': '登录成功'}, 200)
-                # res = make_response(result, 200)
                 res.set_cookie('user', result.user)
-                # res.set_cookie('user', user)
                 res.set_cookie('score', str(result.score))
         else:
-            # result['state'] = 'fail'
             res = make_response({'state': 'fail', 'msg': '不存在此用户'}, 403)
-            # res = make_response(result, 404)
 
     # 登出
     if request.method == 'DELETE':
@@ -52,17 +45,23 @@ def _session():
 
 @user_blue.route('/regist', methods=['POST'])
 def regist():
+    res = None
     # 获取表单数据
     user = request.form.get('user')
     pwd = request.form.get('pwd')
 
     # 插入数据库
     result = userdb.regist(User(user, pwd))
-    if result['state']:
-        return jsonify({'state': 'ok', 'msg': '注册成功'})
+    # if result['state']:
+    if result:
+        res = make_response({'state': 'ok', 'msg': '注册成功'}, 200)
+        # return jsonify({'state': 'ok', 'msg': '注册成功'})
     else:
-        res = make_response({'state': 'fail', 'msg': f'注册失败, {result["msg"]}'}, 403)
-        return res
+        res = make_response({'state': 'fail', 'msg': '注册失败, 用户名已存在, 请修改后重试'}, 403)
+        # res = make_response({'state': 'fail', 'msg': f'注册失败, {result["msg"]}'}, 403)
+        # return res
+    
+    return res
 
 @user_blue.route('/modify', methods=['POST'])
 def modify():
