@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+    <head>
+        <meta charset="UTF-8">
+        <title>精灵向前冲</title>
+        <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/jquery-confirm.min.css') }}">
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/static.css') }}">
+    </head>
+    <body>
+        <canvas id="canvas1"></canvas>
+        <img alt="img" src="{{ url_for('static', filename='img/09.png') }}" id="player">
+        <img alt="img" src="{{ url_for('static', filename='img/layer-1.png') }}" id="layer1">
+        <img alt="img" src="{{ url_for('static', filename='img/layer-2.png') }}" id="layer2">
+        <img alt="img" src="{{ url_for('static', filename='img/layer-3.png') }}" id="layer3">
+        <img alt="img" src="{{ url_for('static', filename='img/layer-4.png') }}" id="layer4">
+        <img alt="img" src="{{ url_for('static', filename='img/layer-5.png') }}" id="layer5">
+        <img alt="img" src="{{ url_for('static', filename='img/enemy_fly.png') }}" id="enemy_fly">
+        <img alt="img" src="{{ url_for('static', filename='img/enemy_plant.png') }}" id="enemy_plant">
+        <img alt="img" src="{{ url_for('static', filename='img/enemy_spider_big.png') }}" id="enemy_spider_big">
+        <img alt="img" src="{{ url_for('static', filename='img/fire.png') }}" id="fire">
+        <img alt="img" src="{{ url_for('static', filename='img/collision.png') }}" id="collisionAnimation">
+        <img alt="img" src="{{ url_for('static', filename='img/heart.png') }}" id="lives">
+        <audio id="iceattack" src="{{ url_for('static', filename='audio/ice_attack_2.wav') }}"></audio>
+        <audio id="bgaudio" src="{{ url_for('static', filename='audio/bgaudio.mp3') }}" loop></audio>
+        
+        <div id="maincontainer">
+            <div class="userbox">
+                <button id="userBtn" type="button">登录/注册</button>
+            </div>
+            <div id="gameTitle" class="hcqStyle6">精灵向前冲</div>
+            <div class="gamemenu" id="gamemenu">
+                <button id="btStart" type="button">开始游戏</button>
+                <button id="btRank" type="button">查看排行</button>
+            </div>
+        </div>
+        <div class="modal fade" id="loginModal" role="dialog" style="display: none;"> <div class="modal-dialog modal-sm"> <div class="modal-content"> <div class="modal-header"> <button type="button" class="close" data-dismiss="modal">×</button> <h4 class="modal-title">用户登录</h4> </div> <div class="modal-body"> <form class="form-horizontal"> <div class="form-group"> <div class="col-xs-12"> <div class="input-group"> <label class="input-group-addon">用户:</label> <input class="form-control" id="userInput" autofocus="autofocus" autocomplete="username"> </div> </div> </div> <div class="form-group"> <div class="col-xs-12"> <div class="input-group"> <label class="input-group-addon">密码:</label> <input type="password" class="form-control" id="pwdInput" autocomplete="current-password"> </div> </div> </div> <div class="form-group"> <div class="col-xs-12"> </div> </div> <div class="form-group"> <div class="col-xs-12 text-center"> <button id="btnLogin" type="button" class="btn btn-primary">登录</button> <button id="btnRegist" type="button" class="btn btn-info">注册</button> </div> </div> </form> </div> </div> </div> </div>
+        
+        <div class="modal fade" id="rankModal" role="dialog" style="display: none;">
+            <div class="modal-dialog modal-sm">
+                <div class="modal-content">
+                    <div class="modal-header"> <button type="button" class="close" data-dismiss="modal">×</button>
+                        <h4 class="modal-title" set-lan="html:LoginWndCaption">排名</h4>
+                    </div>
+                    <div class="modal-body">
+                        <table id="rankHead" class="rank">
+                            <tbody>
+                                <tr><td>用户</td><td>分数</td></tr>
+                            </tbody>
+                        </table>
+                        <table id="rankContent" class="rank">
+                            <tbody>
+                                <tr><td>-</td><td>-</td></tr>
+                            </tbody>
+                        </table>
+                        <table id="userRank" class="rank">
+                            <tbody>
+                                <tr><td>-</td><td>-</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script type="module" src="{{ url_for('static', filename='js/jquery.min.js') }}"></script>
+        <script type="module" src="{{ url_for('static', filename='js/jquery-confirm.min.js') }}"></script>
+        <script type="module" src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
+        <script type="module" src="{{ url_for('static', filename='js/game.js') }}"></script>
+        <script type="module" src="{{ url_for('static', filename='js/static.js') }}"></script>
+        <script>
+            window.addEventListener('load', function() {
+                let username = getCookie("user");
+                let score = getCookie("score");
+                if(username) {
+                    $('#userBtn').html("<i style=\"color:ForestGreen\">" + username + "</i>");
+                    $('#userRank td:nth-child(1)').text(username);
+                }
+                if(score) {
+                    $('#userRank td:nth-child(2)').text(score);
+                }
+            });
+            let flag = false;
+            window.addEventListener('click', function() {
+                bgaudio.volume = 0.6;
+                !flag && bgaudio.play() && (flag = true);
+            });
+        </script>
+    </body>
+</html>

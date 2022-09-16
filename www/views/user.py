@@ -108,7 +108,7 @@ def score():
 
     if request.method == 'GET':
         # 查询
-        pass
+        res = make_response({}, 403)
 
     if request.method == 'POST':
         # 修改
