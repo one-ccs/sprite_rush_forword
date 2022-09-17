@@ -332,8 +332,19 @@ function regist() {
     }
     ))
 }
-function parseData(data) {
-    return false;
+function showRankContent(data) {
+    let html = '<tbody>';
+    let i = 1;
+    for(let row of data.list) {
+        if(row.user === getCookie('user')) {
+            html += `<tr style="color: forestgreen;font-weight: bold;"><td>${row.user}</td><td>${row.score}</td><td>${i++}</td></tr>`;
+        }
+        else {
+            html += `<tr><td>${row.user}</td><td>${row.score}</td><td>${i++}</td></tr>`;
+        }
+    }
+    html += '</tbody>';
+    $('#rankContent').html(html);
 }
 function refreshRank() {
     let settings = {
@@ -348,19 +359,10 @@ function refreshRank() {
         contentType: !1
     };
     $.ajax(settings).done((function(data) {
-        parseData(data) ? $('#rankModal').modal("toggle") : $.confirm({
-            theme: "bootstrap",
-            type: "red",
-            title: "提示",
-            content: '<span class="fileitemTr">' + '排名数据解析出错，请联系管理员！' + "</span>",
-            autoClose: "cancelAction|1200",
-            buttons: {
-                cancelAction: {
-                    text: '确定',
-                    action: function() {}
-                }
-            }
-        });
+        showRankContent(data);
+        $('#userRank td:nth-child(1)').text(getCookie('user')),
+        $('#userRank td:nth-child(2)').text(data.score),
+        $('#rankModal').modal("toggle");
     })).fail((function(data) {
         401 === data.status && $.confirm({
             theme: "bootstrap",

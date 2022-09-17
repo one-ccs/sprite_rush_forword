@@ -5,7 +5,7 @@ from datetime import timedelta
 from classes.userdb import UserDB
 
 app = Flask(__name__)
-userdb = UserDB('./db/user.db')
+userdb = UserDB('../db/user.db')
 
 app.config['SECRET_KEY'] = 'hard to gusss'
 # app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(seconds=1800)
