@@ -306,7 +306,7 @@ function regist() {
             type: "green",
             title: "提示",
             content: '<span class="fileitemTr">' + '注册成功, 请重新登录！' + "</span>",
-            autoClose: "cancelAction|1200",
+            autoClose: "cancelAction|800",
             typeAnimated: !0,
             buttons: {
                 cancelAction: {
@@ -337,10 +337,10 @@ function showRankContent(data) {
     let i = 1;
     for(let row of data.list) {
         if(row.user === getCookie('user')) {
-            html += `<tr style="color: forestgreen;font-weight: bold;"><td>${row.user}</td><td>${row.score}</td><td>${i++}</td></tr>`;
+            html += `<tr style="color: forestgreen;font-weight: bold;"><td>${row.user}</td><td>${row.score}</td><td>${row.rank}</td></tr>`;
         }
         else {
-            html += `<tr><td>${row.user}</td><td>${row.score}</td><td>${i++}</td></tr>`;
+            html += `<tr><td>${row.user}</td><td>${row.score}</td><td>${row.rank}</td></tr>`;
         }
     }
     html += '</tbody>';
@@ -360,8 +360,9 @@ function refreshRank() {
     };
     $.ajax(settings).done((function(data) {
         showRankContent(data);
-        $('#userRank td:nth-child(1)').text(getCookie('user')),
-        $('#userRank td:nth-child(2)').text(data.score),
+        $('#userRank td:nth-child(1)').text(data.user['user']),
+        $('#userRank td:nth-child(2)').text(data.user['score']),
+        $('#userRank td:nth-child(3)').text(data.user['rank']),
         $('#rankModal').modal("toggle");
     })).fail((function(data) {
         401 === data.status && $.confirm({

@@ -109,17 +109,21 @@ def score():
     if request.method == 'GET':
         # 查询
         result = userdb.query_all_and_user(User(cooike_user, 'None'))
-        if result[0] and len(result[0]) > 0 and result[1] and len(result[1]) == 1:
+        if result[0] and len(result[0]) > 0 and result[1] and len(result[1]) > 0:
             # 查询成功, 构造 dict
             dict = {
                 'state': 'ok',
                 'msg': '查询成功',
                 'length': len(result[0]),
                 'list': [],
-                'user': result[1]['score']
+                'user': {
+                    'user': result[1]['user'],
+                    'score': result[1]['score'],
+                    'rank': result[1]['rank']
+                }
             }
             for row in result[0]:
-                dict['list'].append({'user': row['user'], 'score': row['score']})
+                dict['list'].append({'user': row['user'], 'score': row['score'], 'rank': row['rank']})
             res = make_response(jsonify(dict), 200)
         else:
             res = make_response({'state': 'fail', 'msg': '查询失败'}, 500)

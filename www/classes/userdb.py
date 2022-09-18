@@ -19,7 +19,7 @@ class UserDB:
         self.db_path = db_path
 
     def query_all_and_user(self, user):
-        ''' 返回排名前二十和当前用户分数 '''
+        """ 返回排名前二十和当前用户分数 """
         if not isinstance(user, User):
             raise TypeError(f'类型错误: 期待 {type(User)} 类型, 却传入{type(user)} 类型.')
         all = one = None
@@ -27,8 +27,22 @@ class UserDB:
         connection = sqlite3.connect(self.db_path)
         connection.row_factory = sqlite3.Row
         try:
-            all = connection.execute('SELECT user,score FROM user ORDER BY score DESC LIMIT 20').fetchall()
-            one = connection.execute('SELECT score FROM user WHERE user=?', (user.user, )).fetchone()
+            # all = connection.execute('SELECT user,score FROM user ORDER BY score DESC LIMIT 20').fetchall()
+            all = connection.execute('''
+                SELECT u.user,u.score,(SELECT count(distinct(score))
+                    FROM user
+                    WHERE score>=u.score
+                ) AS rank
+                FROM user AS u
+                ORDER BY score DESC
+                LIMIT 20
+            ''').fetchall()
+            # one = connection.execute('SELECT score FROM user WHERE user=?', (user.user, )).fetchone()
+            one = connection.execute('''
+                SELECT user,score,rank
+                    FROM (SELECT u.user,u.score,(SELECT count(distinct(score)) FROM user WHERE score>=u.score ) AS rank FROM user AS u ORDER BY score DESC)
+                    WHERE user=?
+            ''', (user.user, )).fetchone()
         except sqlite3.IntegrityError:
             pass
         finally:
